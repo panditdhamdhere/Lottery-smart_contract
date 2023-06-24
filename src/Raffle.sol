@@ -30,6 +30,8 @@ contract Raffle is VRFConsumerBaseV2 {
     // error
     error Raffle__NotEnoughEthSent();
     error Raffle__TransferFailed();
+    error Raffle__RaffleNotOpen();
+    error UpkeepNotNeeded();
 
     // type declarations
     enum RaffleState {
@@ -55,6 +57,7 @@ contract Raffle is VRFConsumerBaseV2 {
 
     // Events
     event EnteredRaffle(address indexed player);
+    event PickedWinner(address indexed winner);
 
     constructor(
         uint256 entranceFee,
@@ -90,13 +93,32 @@ contract Raffle is VRFConsumerBaseV2 {
         emit EnteredRaffle(msg.sender);
     }
 
+    function checkUpKeep(
+        bytes memory
+    ) public view returns (bool upKeepNeeded, bytes memory) {
+        bool timeHasPassed = (block.timestamp - s_lastTimeStamp) >= i_interval;
+        bool isOpen = RaffleState.OPEN == s_raffleState;
+        bool hasBalance = address(this).balance > 0;
+        bool hasPlayers = s_players.length > 0;
+        upKeepNeeded = (timeHasPassed && isOpen && hasBalance && hasPlayers);
+        return (upKeepNeeded, "0x0");
+    }
+
     // get a random number
     // USe the random number to pick a player
 
-    function pickWinner() external {
-        if ((block.timestamp - s_lastTimeStamp) < i_interval) {
-            revert();
+    function performUpKeep(bytes callData) external {
+        (bool upKeepNeeded, ) = checkUpKeep("");
+        if (!upKeepNeeded) {
+            revert UpkeepNotNeeded(
+                address(this).balance,
+                s_players.length,
+                uint256(s_raffleState)
+            );
         }
+        // check to see if there are enough players
+
+        s_raffleState = RaffleState.CALCULATING;
 
         uint256 requestId = i_vrfCoordinator.requestRandomWords(
             i_gasLane, //gaslane
@@ -111,9 +133,17 @@ contract Raffle is VRFConsumerBaseV2 {
         uint256 requestId,
         uint256[] memory randomWords
     ) internal override {
+        // checks
+
         uint256 indexOfWinner = randomWords[0] % s_players.length;
         address payable winner = s_players[indexOfWinner];
         s_recentWinner = winner;
+        s_raffleState = RaffleState.OPEN;
+
+        s_players = new address payable[](0);
+        s_lastTimeStamp = block.timestamp;
+        emit PickedWinner(winner);
+
         (bool success, ) = winner.call{value: address(this).balance}("");
         if (!success) {
             revert Raffle__TransferFailed();
