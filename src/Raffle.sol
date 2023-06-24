@@ -31,7 +31,11 @@ contract Raffle is VRFConsumerBaseV2 {
     error Raffle__NotEnoughEthSent();
     error Raffle__TransferFailed();
     error Raffle__RaffleNotOpen();
-    error UpkeepNotNeeded();
+    error UpkeepNotNeeded(
+        uint256 currentBalance,
+        uint256 numPlayers,
+        uint256 RaffleState
+    );
 
     // type declarations
     enum RaffleState {
@@ -107,9 +111,10 @@ contract Raffle is VRFConsumerBaseV2 {
     // get a random number
     // USe the random number to pick a player
 
-    function performUpKeep(bytes callData) external {
-        (bool upKeepNeeded, ) = checkUpKeep("");
-        if (!upKeepNeeded) {
+    function performUpKeep(bytes calldata) external {
+        // bool upKeepNeeded =
+        (bool upkeepNeeded, ) = checkUpKeep("");
+        if (!upkeepNeeded) {
             revert UpkeepNotNeeded(
                 address(this).balance,
                 s_players.length,
@@ -120,7 +125,7 @@ contract Raffle is VRFConsumerBaseV2 {
 
         s_raffleState = RaffleState.CALCULATING;
 
-        uint256 requestId = i_vrfCoordinator.requestRandomWords(
+        i_vrfCoordinator.requestRandomWords(
             i_gasLane, //gaslane
             i_subscriptionId,
             REQUEST_CONFIRMATIONS,
@@ -130,7 +135,7 @@ contract Raffle is VRFConsumerBaseV2 {
     }
 
     function fulfillRandomWords(
-        uint256 requestId,
+        uint256,
         uint256[] memory randomWords
     ) internal override {
         // checks
