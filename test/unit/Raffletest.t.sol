@@ -6,6 +6,7 @@ import {DeployRaffle} from "../../script/DeployRaffle.s.sol";
 import {Raffle} from "../../src/Raffle.sol";
 import {Test, console} from "forge-std/Test.sol";
 import {HelperConfig} from "../../script/HelperConfig.s.sol";
+import {Vm} from "forge-std/Vm.sol";
 
 contract RaffleTest is Test {
     // Events
@@ -139,7 +140,7 @@ contract RaffleTest is Test {
         uint256 numPlayers = 0;
         uint256 raffleState = 0;
 
-        // act / revert  
+        // act / revert
         vm.expectRevert(
             abi.encodeWithSelector(
                 Raffle.Raffle__UpkeepNotNeeded.selector,
@@ -149,5 +150,26 @@ contract RaffleTest is Test {
             )
         );
         raffle.performUpkeep("");
+    }
+
+modifier raffleEnterAndTimePassed() {
+     vm.prank(PLAYER);
+        rafdfle.enterRaffle{value: entranceFee}();
+        vm.warp(block.number + 1);
+        _i
+}
+
+
+    function testPerformUpkeepUpdatesRaffleStateAndEmitRequestId() public raffleEnterAndTimePassed {
+        // Act 
+       vm.recordLogs();
+       raffle.performUpkeep(""); // emit requestId
+Vm.Log[] memory entries = vm.getRecordedLogs();
+bytes32 requestId = entries[1].topics[1];
+
+Raffle.RaffleState rState = raffle.getRaffleState();
+
+assert(uint256 requestId > 0); 
+assert(uint256 (rState) == 1);
     }
 }
