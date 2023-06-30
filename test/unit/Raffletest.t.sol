@@ -7,6 +7,7 @@ import {Raffle} from "../../src/Raffle.sol";
 import {Test, console} from "forge-std/Test.sol";
 import {HelperConfig} from "../../script/HelperConfig.s.sol";
 import {Vm} from "forge-std/Vm.sol";
+import {VRFCoordinatorV2Mock} from "@chainlink/contracts/src/v0.8/mocks/VRFCoordinatorV2Mock.sol";
 
 contract RaffleTest is Test {
     // Events
@@ -135,51 +136,57 @@ contract RaffleTest is Test {
     }
 
     function testPerformUpkeepRevertsIfCheckUpkeepIsFalse() public {
-        // Arrenge
+        // Arrange
         uint256 currentBalance = 0;
         uint256 numPlayers = 0;
-        uint256 raffleState = 0;
-
-        // act / revert
+        Raffle.RaffleState rState = raffle.getRaffleState();
+        // Act / Assert
         vm.expectRevert(
             abi.encodeWithSelector(
                 Raffle.Raffle__UpkeepNotNeeded.selector,
                 currentBalance,
                 numPlayers,
-                raffleState
+                rState
             )
         );
         raffle.performUpkeep("");
     }
 
-modifier raffleEnterAndTimePassed() {
-     vm.prank(PLAYER);
-        rafdfle.enterRaffle{value: entranceFee}();
+    modifier raffleEnterAndTimePassed() {
+        vm.prank(PLAYER);
+        raffle.enterRaffle{value: entranceFee}();
         vm.warp(block.number + 1);
-        _i
-}
-
-
-    function testPerformUpkeepUpdatesRaffleStateAndEmitRequestId() public raffleEnterAndTimePassed {
-        // Act 
-       vm.recordLogs();
-       raffle.performUpkeep(""); // emit requestId
-Vm.Log[] memory entries = vm.getRecordedLogs();
-bytes32 requestId = entries[1].topics[1];
-
-Raffle.RaffleState rState = raffle.getRaffleState();
-
-assert(uint256 requestId > 0); 
-assert(uint256 (rState) == 1);
+        _;
     }
 
-    ////////////////////////////  
-    // fullfill random Words // 
+    function testPerformUpkeepUpdatesRaffleStateAndEmitRequestId()
+        public
+        raffleEnterAndTimePassed
+    {
+        // Act
+        vm.recordLogs();
+        raffle.performUpkeep(""); // emit requestId
+        Vm.Log[] memory entries = vm.getRecordedLogs();
+        bytes32 requestId = entries[1].topics[1];
+
+        Raffle.RaffleState rState = raffle.getRaffleState();
+
+        assert(uint256(requestId) > 0);
+        assert(uint256(rState) == 1);
+    }
+
+    ////////////////////////////
+    // fullfill random Words //
     ///////////////////////////
 
-    function testfulfillRandomWordsCanOnlyBeCalledAfterPerformUpkeep() public raffleEnterAndTimePassed(){
-// Arrenge 
-vm.expectRevert("nonexistent request");
-VRFCoordinatorV2Mock(vrfCoordinator).fulfillRandomWords(0, address(raffle));
+    function testfulfillRandomWordsCanOnlyBeCalledAfterPerformUpkeep(
+        uint256 randomRequestId
+    ) public raffleEnterAndTimePassed {
+        // Arrenge
+        vm.expectRevert("nonexistent request");
+        VRFCoordinatorV2Mock(vrfCoordinator).fulfillRandomWords(
+            randomRequestId,
+            address(raffle)
+        );
     }
 }
