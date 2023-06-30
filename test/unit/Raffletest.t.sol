@@ -227,6 +227,9 @@ contract RaffleTest is Test {
         assert(raffle.getRecentWinner() != address(0));
         assert(raffle.getLengthOfPlayers() == 0);
         assert(previousTimeStamp < raffle.getLastTimeStamp());
-        assert(raffle.getRecentWinner().balance == STARTING_USER_BALANCE);
+        assert(
+            raffle.getRecentWinner().balance ==
+                STARTING_USER_BALANCE + prize - entranceFee
+        );
     }
 }
