@@ -172,4 +172,14 @@ Raffle.RaffleState rState = raffle.getRaffleState();
 assert(uint256 requestId > 0); 
 assert(uint256 (rState) == 1);
     }
+
+    ////////////////////////////  
+    // fullfill random Words // 
+    ///////////////////////////
+
+    function testfulfillRandomWordsCanOnlyBeCalledAfterPerformUpkeep() public raffleEnterAndTimePassed(){
+// Arrenge 
+vm.expectRevert("nonexistent request");
+VRFCoordinatorV2Mock(vrfCoordinator).fulfillRandomWords(0, address(raffle));
+    }
 }
