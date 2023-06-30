@@ -143,7 +143,7 @@ contract RaffleTest is Test {
         // Act / Assert
         vm.expectRevert(
             abi.encodeWithSelector(
-                Raffle.Raffle__UpkeepNotNeeded.selector,
+                Raffle.Raffle__UpKeepNotNeeded.selector,
                 currentBalance,
                 numPlayers,
                 rState
