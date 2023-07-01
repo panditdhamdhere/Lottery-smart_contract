@@ -189,7 +189,7 @@ contract RaffleTest is Test {
 
     function testfulfillRandomWordsCanOnlyBeCalledAfterPerformUpkeep(
         uint256 randomRequestId
-    ) public raffleEnterAndTimePassed {
+    ) public raffleEnterAndTimePassed skipFork {
         // Arrenge
         vm.expectRevert("nonexistent request");
         VRFCoordinatorV2Mock(vrfCoordinator).fulfillRandomWords(
@@ -201,6 +201,7 @@ contract RaffleTest is Test {
     function testFulfillRandomWordsPicksAWinnerResetsAndSendsMoney()
         public
         raffleEnterAndTimePassed
+        skipFork
     {
         // Arrenge
         uint256 additionalEntrants = 5;
