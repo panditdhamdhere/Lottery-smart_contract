@@ -38,7 +38,8 @@ contract RaffleTest is Test {
             gasLane,
             subscriptionId,
             callbackGasLimit,
-            link
+            link,
+
         ) = helperConfig.activeNetworkConfig();
         vm.deal(PLAYER, STARTING_USER_BALANCE);
     }
@@ -143,7 +144,7 @@ contract RaffleTest is Test {
         // Act / Assert
         vm.expectRevert(
             abi.encodeWithSelector(
-                Raffle.Raffle__UpKeepNotNeeded.selector,
+                Raffle.Raffle__UpkeepNotNeeded.selector,
                 currentBalance,
                 numPlayers,
                 rState
@@ -178,6 +179,13 @@ contract RaffleTest is Test {
     ////////////////////////////
     // fullfill random Words //
     ///////////////////////////
+
+    modifier skipFork() {
+        if (block.chainId != 31337) {
+            return;
+        }
+        _;
+    }
 
     function testfulfillRandomWordsCanOnlyBeCalledAfterPerformUpkeep(
         uint256 randomRequestId
